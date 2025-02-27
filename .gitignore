@@ -7,13 +7,3 @@ __pycache__/
 
 # Ignore environment files
 .env
-
-# Ignore joblib model files
-*.joblib
-
-# Ignore weights or large binary files (optional)
-*.pt
-
-# Ignore Docker-related files (optional)
-docker-compose.yml
-Dockerfile
