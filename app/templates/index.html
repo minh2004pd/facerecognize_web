@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam Processing</title>
+    <style>
+        /* Global styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #121212; /* Dark theme */
+            color: #e0e0e0; /* Light text */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Align from the top */
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-top: 30px; /* Space from the top */
+            text-align: center;
+            color: #00e5ff;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            text-shadow: 0 4px 6px rgba(0, 0, 0, 0.7);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        h1:hover {
+            transform: scale(1.1);
+        }
+
+        /* Container for video and image */
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            animation: fadeIn 1s ease-out;
+            margin-top: 20px; /* Add margin-top to prevent it from colliding with h1 */
+        }
+
+        /* Glassmorphism effect for containers */
+        .video-container,
+        .image-container {
+            background: rgba(0, 0, 0, 0.6); /* semi-transparent background */
+            backdrop-filter: blur(10px); /* Apply blur effect */
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
+            width: 400px; /* Smaller container width */
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Hover effects for video/image containers */
+        .video-container:hover,
+        .image-container:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 255, 255, 0.6);
+        }
+
+        /* Video and Image styles */
+        video,
+        img {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
+            transition: box-shadow 0.3s ease-in-out;
+        }
+
+        video:hover,
+        img:hover {
+            box-shadow: 0 12px 30px rgba(0, 255, 255, 0.6); /* Neon-like glow on hover */
+        }
+
+        canvas {
+            display: none;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        /* Footer for additional info */
+        .footer {
+            margin-top: 50px;
+            font-size: 16px;
+            color: #aaa;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: color 0.3s ease;
+        }
+
+        .footer:hover {
+            color: #00e5ff; /* Light cyan color on hover */
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Webcam Processing</h1>
+
+    <div class="container">
+        <!-- Original Webcam Feed -->
+        <div class="video-container">
+            <h2>Original Webcam Feed</h2>
+            <video id="video" autoplay muted playsinline></video>
+        </div>
+
+        <!-- Processed Frame -->
+        <div class="image-container">
+            <h2>Processed Frame</h2>
+            <img id="processed" alt="Processed Frame" />
+        </div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const processedImg = document.getElementById('processed');
+
+        // Access webcam and stream to the <video> element
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((stream) => {
+                video.srcObject = stream;
+            })
+            .catch((err) => {
+                console.error("Error accessing webcam:", err);
+            });
+
+        // Capture frames and send to the backend
+        function captureAndSendFrame() {
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Draw video frame on canvas
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert canvas to Base64 image
+            const dataUrl = canvas.toDataURL('image/jpeg'); // Base64-encoded JPEG image
+            const base64Image = dataUrl.split(',')[1]; // Strip the `data:image/jpeg;base64,` prefix
+
+            // Send the frame to the backend
+            fetch('/process_frame', {
+                method: 'POST',
+                body: JSON.stringify({ image: base64Image }),
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.blob();
+                })
+                .then((blob) => {
+                    // Update processed image
+                    processedImg.src = URL.createObjectURL(blob);
+                })
+                .catch((err) => console.error("Error sending frame:", err));
+        }
+
+        // Capture and send frames at intervals (e.g., every 200ms)
+        setInterval(captureAndSendFrame, 200);
+    </script>
+
+    <div class="footer">
+        <p>Powered by FastAPI & YOLOv5</p>
+    </div>
+
+</body>
+</html>
