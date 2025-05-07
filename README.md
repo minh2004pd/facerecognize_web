@@ -1,5 +1,3 @@
-Sure! Here's the updated README for your project with **Docker Compose**:
-
 # Webcam Processing with YOLOv5 & FastAPI 📸
 
 This project demonstrates real-time webcam processing using **YOLOv5** for object detection, powered by **FastAPI** for quick deployment. The system captures the webcam feed and processes the frames to detect objects, with the output including bounding boxes and confidence scores around detected objects. It uses **Docker Compose** to simplify the setup and deployment.
